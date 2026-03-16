@@ -13,7 +13,9 @@ from utils.settings import Settings
 
 
 def create_ocr_backend(*args, **kwargs):
-    raise RuntimeError('OCR pipeline has been removed from the main screen prompt flow.')
+    raise RuntimeError(
+        "OCR pipeline has been removed from the main screen prompt flow."
+    )
 
 
 class Screen:
@@ -26,9 +28,9 @@ class Screen:
     EDGE_THRESHOLD = 28
     MIN_CLICKABLE_BOX_SIZE = 36
     TARGET_ICON_BOX_SIZE = 48
-    MAX_PROMPT_IMAGE_WIDTH = 1920
-    MAX_PROMPT_IMAGE_HEIGHT = 1080
-    PROMPT_IMAGE_ARCHIVE_DIR_NAME = 'prompt_images'
+    MAX_PROMPT_IMAGE_WIDTH = 2560
+    MAX_PROMPT_IMAGE_HEIGHT = 1440
+    PROMPT_IMAGE_ARCHIVE_DIR_NAME = "prompt_images"
     GRID_MAJOR_TICK_PERCENT = 3
     GRID_MINOR_TICK_PERCENT = 3
     GRID_AXIS_MIN_PADDING = 24
@@ -49,30 +51,32 @@ class Screen:
         return self.screen_adapter.get_screenshot()
 
     def get_screenshot_in_base64(self) -> str:
-        return self.get_visual_prompt_payload()['annotated_image_base64']
+        return self.get_visual_prompt_payload()["annotated_image_base64"]
 
     def get_visual_prompt_payload(self) -> dict[str, Any]:
         prompt_image, frame_context = self._build_prompt_image_and_context()
         archived_image_path = self._maybe_archive_prompt_image(prompt_image)
         if archived_image_path is not None:
-            frame_context['model_prompt_image_path'] = archived_image_path
+            frame_context["model_prompt_image_path"] = archived_image_path
 
         img_bytes = io.BytesIO()
-        prompt_image.save(img_bytes, format='PNG', optimize=True)
+        prompt_image.save(img_bytes, format="PNG", optimize=True)
         img_bytes.seek(0)
 
         return {
-            'annotated_image_base64': base64.b64encode(img_bytes.read()).decode('utf-8'),
-            'frame_context': frame_context,
+            "annotated_image_base64": base64.b64encode(img_bytes.read()).decode(
+                "utf-8"
+            ),
+            "frame_context": frame_context,
         }
 
     def get_visual_prompt_file(self) -> tuple[str, dict[str, Any]]:
         prompt_image, frame_context = self._build_prompt_image_and_context()
         archived_image_path = self._maybe_archive_prompt_image(prompt_image)
         if archived_image_path is not None:
-            frame_context['model_prompt_image_path'] = archived_image_path
+            frame_context["model_prompt_image_path"] = archived_image_path
 
-        filename = 'screenshot_annotated.png'
+        filename = "screenshot_annotated.png"
         filepath = os.path.join(Settings().get_settings_directory_path(), filename)
         prompt_image.save(filepath)
         return filepath, frame_context
@@ -81,7 +85,9 @@ class Screen:
         # In memory files don't work with OpenAI Assistants API because of missing filename attribute
         img_bytes = io.BytesIO()
         prompt_image, _ = self._build_prompt_image_and_context()
-        prompt_image.save(img_bytes, format='PNG')  # Save the screenshot to an in-memory file.
+        prompt_image.save(
+            img_bytes, format="PNG"
+        )  # Save the screenshot to an in-memory file.
         img_bytes.seek(0)
         return img_bytes
 
@@ -97,17 +103,22 @@ class Screen:
 
     def _maybe_archive_prompt_image(self, prompt_image: Image.Image) -> str | None:
         settings_dict = Settings().get_dict()
-        advanced_settings = settings_dict.get('advanced')
+        advanced_settings = settings_dict.get("advanced")
         save_model_prompt_images = False
         if isinstance(advanced_settings, dict):
-            save_model_prompt_images = advanced_settings.get('save_model_prompt_images', False)
-        if not isinstance(save_model_prompt_images, bool) or not save_model_prompt_images:
+            save_model_prompt_images = advanced_settings.get(
+                "save_model_prompt_images", False
+            )
+        if (
+            not isinstance(save_model_prompt_images, bool)
+            or not save_model_prompt_images
+        ):
             return None
 
         archive_directory = self._get_prompt_image_archive_directory()
         archive_directory.mkdir(parents=True, exist_ok=True)
         archive_path = self._build_prompt_image_archive_path(archive_directory)
-        prompt_image.save(archive_path, format='PNG', optimize=True)
+        prompt_image.save(archive_path, format="PNG", optimize=True)
         return str(archive_path)
 
     def _get_prompt_image_archive_directory(self) -> Path:
@@ -115,27 +126,27 @@ class Screen:
         return project_root / self.PROMPT_IMAGE_ARCHIVE_DIR_NAME
 
     def _build_prompt_image_archive_path(self, archive_directory: Path) -> Path:
-        timestamp_text = datetime.now().strftime('%m月%d日_%H时%M分%S秒')
-        candidate_path = archive_directory / f'{timestamp_text}.png'
+        timestamp_text = datetime.now().strftime("%m月%d日_%H时%M分%S秒")
+        candidate_path = archive_directory / f"{timestamp_text}.png"
         if not candidate_path.exists():
             return candidate_path
 
         suffix = 2
         while True:
-            candidate_path = archive_directory / f'{timestamp_text}_{suffix}.png'
+            candidate_path = archive_directory / f"{timestamp_text}_{suffix}.png"
             if not candidate_path.exists():
                 return candidate_path
             suffix += 1
 
     def get_temp_filename_for_current_screenshot(self):
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmpfile:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
             prompt_image, _ = self._build_prompt_image_and_context()
             prompt_image.save(tmpfile.name)
             return tmpfile.name
 
     def get_screenshot_file(self):
         # Gonna always keep a screenshot.png in ~/.open-interface/ because file objects, temp files, every other way has an error
-        filename = 'screenshot.png'
+        filename = "screenshot.png"
         filepath = os.path.join(Settings().get_settings_directory_path(), filename)
         img, _ = self._build_prompt_image_and_context()
         img.save(filepath)
@@ -147,25 +158,27 @@ class Screen:
         prompt_canvas, grid_reference = self._build_grid_prompt_image(screenshot)
 
         frame_context = {
-            'logical_screen': {
-                'width': screen_width,
-                'height': screen_height,
+            "logical_screen": {
+                "width": screen_width,
+                "height": screen_height,
             },
-            'captured_screen': {
-                'width': screenshot.width,
-                'height': screenshot.height,
+            "captured_screen": {
+                "width": screenshot.width,
+                "height": screenshot.height,
             },
-            'grid_reference': grid_reference,
-            'screen_state': self._build_screen_state(grid_reference),
+            "grid_reference": grid_reference,
+            "screen_state": self._build_screen_state(grid_reference),
         }
 
         return prompt_canvas, frame_context
 
-    def _build_grid_prompt_image(self, screenshot: Image.Image) -> tuple[Image.Image, dict[str, Any]]:
+    def _build_grid_prompt_image(
+        self, screenshot: Image.Image
+    ) -> tuple[Image.Image, dict[str, Any]]:
         font = ImageFont.load_default()
-        measure_image = Image.new('RGBA', (1, 1), (0, 0, 0, 0))
+        measure_image = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
         measure_draw = ImageDraw.Draw(measure_image)
-        label_width, label_height = self._measure_text(measure_draw, '100', font)
+        label_width, label_height = self._measure_text(measure_draw, "100", font)
 
         top_padding = max(
             self.GRID_AXIS_MIN_PADDING,
@@ -182,12 +195,14 @@ class Screen:
 
         canvas_width = screenshot.width + left_padding + right_padding
         canvas_height = screenshot.height + top_padding + bottom_padding
-        canvas = Image.new('RGBA', (canvas_width, canvas_height), self.GRID_AXIS_BACKGROUND_COLOR)
-        screenshot_rgba = screenshot.convert('RGBA')
+        canvas = Image.new(
+            "RGBA", (canvas_width, canvas_height), self.GRID_AXIS_BACKGROUND_COLOR
+        )
+        screenshot_rgba = screenshot.convert("RGBA")
         screenshot_origin = (left_padding, top_padding)
         canvas.paste(screenshot_rgba, screenshot_origin)
 
-        draw = ImageDraw.Draw(canvas, 'RGBA')
+        draw = ImageDraw.Draw(canvas, "RGBA")
         origin_x = left_padding
         origin_y = top_padding
         content_right = origin_x + screenshot.width
@@ -202,7 +217,11 @@ class Screen:
         for percent in self._build_grid_tick_percents():
             x = origin_x + int(round(screenshot.width * (percent / 100.0)))
             y = origin_y + int(round(screenshot.height * (percent / 100.0)))
-            line_color = self.GRID_MAJOR_LINE_COLOR if percent == 100 else self.GRID_MINOR_LINE_COLOR
+            line_color = (
+                self.GRID_MAJOR_LINE_COLOR
+                if percent == 100
+                else self.GRID_MINOR_LINE_COLOR
+            )
 
             draw.line((x, origin_y, x, content_bottom), fill=line_color, width=1)
             draw.line((origin_x, y, content_right, y), fill=line_color, width=1)
@@ -211,22 +230,22 @@ class Screen:
             self._draw_left_tick_label(draw, font, percent, y, left_padding)
 
         grid_reference = {
-            'major_tick_percent': self.GRID_MAJOR_TICK_PERCENT,
-            'minor_tick_percent': self.GRID_MINOR_TICK_PERCENT,
-            'coordinate_system': 'percent',
-            'axes': ['top', 'left'],
-            'origin': 'top_left',
-            'x_range': [0, 100],
-            'y_range': [0, 100],
-            'padding': {
-                'top': top_padding,
-                'left': left_padding,
-                'right': right_padding,
-                'bottom': bottom_padding,
+            "major_tick_percent": self.GRID_MAJOR_TICK_PERCENT,
+            "minor_tick_percent": self.GRID_MINOR_TICK_PERCENT,
+            "coordinate_system": "percent",
+            "axes": ["top", "left"],
+            "origin": "top_left",
+            "x_range": [0, 100],
+            "y_range": [0, 100],
+            "padding": {
+                "top": top_padding,
+                "left": left_padding,
+                "right": right_padding,
+                "bottom": bottom_padding,
             },
         }
 
-        return canvas.convert('RGB'), grid_reference
+        return canvas.convert("RGB"), grid_reference
 
     def _measure_text(
         self,
@@ -271,7 +290,9 @@ class Screen:
         label_width, label_height = self._measure_text(draw, label, font)
         text_x = max(2, left_padding - label_width - 6)
         text_y = int(round(y_position - (label_height / 2)))
-        draw.text((text_x, max(2, text_y)), label, fill=self.GRID_LABEL_COLOR, font=font)
+        draw.text(
+            (text_x, max(2, text_y)), label, fill=self.GRID_LABEL_COLOR, font=font
+        )
 
     def _update_frame_context_for_prompt_image(
         self,
@@ -287,30 +308,32 @@ class Screen:
         scale_x = prompt_width / float(max(1, source_width))
         scale_y = prompt_height / float(max(1, source_height))
 
-        grid_reference = frame_context.get('grid_reference')
+        grid_reference = frame_context.get("grid_reference")
         if isinstance(grid_reference, dict):
-            padding = grid_reference.get('padding')
+            padding = grid_reference.get("padding")
             if isinstance(padding, dict):
-                grid_reference['padding'] = {
-                    'top': int(round(float(padding.get('top') or 0) * scale_y)),
-                    'left': int(round(float(padding.get('left') or 0) * scale_x)),
-                    'right': int(round(float(padding.get('right') or 0) * scale_x)),
-                    'bottom': int(round(float(padding.get('bottom') or 0) * scale_y)),
+                grid_reference["padding"] = {
+                    "top": int(round(float(padding.get("top") or 0) * scale_y)),
+                    "left": int(round(float(padding.get("left") or 0) * scale_x)),
+                    "right": int(round(float(padding.get("right") or 0) * scale_x)),
+                    "bottom": int(round(float(padding.get("bottom") or 0) * scale_y)),
                 }
-            grid_reference['prompt_image_size'] = {
-                'width': prompt_width,
-                'height': prompt_height,
+            grid_reference["prompt_image_size"] = {
+                "width": prompt_width,
+                "height": prompt_height,
             }
 
-        screen_state = frame_context.get('screen_state')
+        screen_state = frame_context.get("screen_state")
         if isinstance(screen_state, dict):
-            screen_state['prompt_mode'] = 'pure_grid'
-            screen_state['prompt_image_size'] = {
-                'width': prompt_width,
-                'height': prompt_height,
+            screen_state["prompt_mode"] = "pure_grid"
+            screen_state["prompt_image_size"] = {
+                "width": prompt_width,
+                "height": prompt_height,
             }
 
-    def _detect_anchor_boxes(self, image: Image.Image) -> list[tuple[int, int, int, int]]:
+    def _detect_anchor_boxes(
+        self, image: Image.Image
+    ) -> list[tuple[int, int, int, int]]:
         processed, scale_x, scale_y = self._get_processed_edge_image(image)
         width, height = processed.size
         edge_pixels = processed.load()
@@ -381,15 +404,19 @@ class Screen:
                 x2 = max(x1 + 1, min(image.width, x2))
                 y2 = max(y1 + 1, min(image.height, y2))
 
-                normalized_box = self._expand_anchor_box((x1, y1, x2, y2), image.width, image.height)
-                candidates.append({
-                    'box': normalized_box,
-                    'score': area,
-                    'priority': self._get_anchor_priority(normalized_box),
-                })
+                normalized_box = self._expand_anchor_box(
+                    (x1, y1, x2, y2), image.width, image.height
+                )
+                candidates.append(
+                    {
+                        "box": normalized_box,
+                        "score": area,
+                        "priority": self._get_anchor_priority(normalized_box),
+                    }
+                )
 
-        candidates.sort(key=lambda item: (item['priority'], -item['score']))
-        top_candidates = [item['box'] for item in candidates[:self.MAX_ANCHORS * 3]]
+        candidates.sort(key=lambda item: (item["priority"], -item["score"]))
+        top_candidates = [item["box"] for item in candidates[: self.MAX_ANCHORS * 3]]
 
         deduped: list[tuple[int, int, int, int]] = []
         for candidate in top_candidates:
@@ -398,17 +425,21 @@ class Screen:
             deduped.append(candidate)
 
         deduped.sort(key=lambda box: (box[1], box[0]))
-        return deduped[:self.MAX_ANCHORS]
+        return deduped[: self.MAX_ANCHORS]
 
-    def _get_processed_edge_image(self, image: Image.Image) -> tuple[Image.Image, float, float]:
-        grayscale = image.convert('L')
+    def _get_processed_edge_image(
+        self, image: Image.Image
+    ) -> tuple[Image.Image, float, float]:
+        grayscale = image.convert("L")
         width, height = grayscale.size
         if width <= self.EDGE_PROCESSING_MAX_WIDTH:
             processed = grayscale.filter(ImageFilter.FIND_EDGES)
             return processed, 1.0, 1.0
 
         scaled_height = max(1, int((self.EDGE_PROCESSING_MAX_WIDTH / width) * height))
-        resized = grayscale.resize((self.EDGE_PROCESSING_MAX_WIDTH, scaled_height), Image.Resampling.BILINEAR)
+        resized = grayscale.resize(
+            (self.EDGE_PROCESSING_MAX_WIDTH, scaled_height), Image.Resampling.BILINEAR
+        )
         processed = resized.filter(ImageFilter.FIND_EDGES)
 
         scale_x = width / processed.width
@@ -451,57 +482,63 @@ class Screen:
             center_y = int((y1 + y2) / 2)
             box_width = max(1, x2 - x1)
             box_height = max(1, y2 - y1)
-            source = sources[index - 1] if index - 1 < len(sources) else 'detected'
+            source = sources[index - 1] if index - 1 < len(sources) else "detected"
 
-            anchors.append({
-                'id': index,
-                'source': source,
-                'region_type': 'unknown',
-                'x_percent': round(center_x / max(1, image_width), 4),
-                'y_percent': round(center_y / max(1, image_height), 4),
-                'width_percent': round(box_width / max(1, image_width), 4),
-                'height_percent': round(box_height / max(1, image_height), 4),
-                'interactable_score': self._estimate_interactable_score(
-                    box_width,
-                    box_height,
-                    image_width,
-                    image_height,
-                    source,
-                ),
-                'bbox_percent': {
-                    'x1': round(x1 / max(1, image_width), 4),
-                    'y1': round(y1 / max(1, image_height), 4),
-                    'x2': round(x2 / max(1, image_width), 4),
-                    'y2': round(y2 / max(1, image_height), 4),
-                },
-                'text': '',
-                'semantic_role': None,
-                'semantic_confidence': 0.0,
-                'matched_text_block_ids': [],
-            })
+            anchors.append(
+                {
+                    "id": index,
+                    "source": source,
+                    "region_type": "unknown",
+                    "x_percent": round(center_x / max(1, image_width), 4),
+                    "y_percent": round(center_y / max(1, image_height), 4),
+                    "width_percent": round(box_width / max(1, image_width), 4),
+                    "height_percent": round(box_height / max(1, image_height), 4),
+                    "interactable_score": self._estimate_interactable_score(
+                        box_width,
+                        box_height,
+                        image_width,
+                        image_height,
+                        source,
+                    ),
+                    "bbox_percent": {
+                        "x1": round(x1 / max(1, image_width), 4),
+                        "y1": round(y1 / max(1, image_height), 4),
+                        "x2": round(x2 / max(1, image_width), 4),
+                        "y2": round(y2 / max(1, image_height), 4),
+                    },
+                    "text": "",
+                    "semantic_role": None,
+                    "semantic_confidence": 0.0,
+                    "matched_text_block_ids": [],
+                }
+            )
 
         return anchors
 
-    def _build_raw_visual_candidates(self, anchors: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _build_raw_visual_candidates(
+        self, anchors: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         raw_visual_candidates: list[dict[str, Any]] = []
 
         for anchor in anchors:
-            raw_visual_candidates.append({
-                'id': f"raw_{anchor.get('id')}",
-                'anchor_id': anchor.get('id'),
-                'source': anchor.get('source'),
-                'region_type': 'unknown',
-                'center_percent': {
-                    'x': anchor.get('x_percent'),
-                    'y': anchor.get('y_percent'),
-                },
-                'size_percent': {
-                    'width': anchor.get('width_percent'),
-                    'height': anchor.get('height_percent'),
-                },
-                'bbox_percent': dict(anchor.get('bbox_percent') or {}),
-                'interactable_score': anchor.get('interactable_score'),
-            })
+            raw_visual_candidates.append(
+                {
+                    "id": f"raw_{anchor.get('id')}",
+                    "anchor_id": anchor.get("id"),
+                    "source": anchor.get("source"),
+                    "region_type": "unknown",
+                    "center_percent": {
+                        "x": anchor.get("x_percent"),
+                        "y": anchor.get("y_percent"),
+                    },
+                    "size_percent": {
+                        "width": anchor.get("width_percent"),
+                        "height": anchor.get("height_percent"),
+                    },
+                    "bbox_percent": dict(anchor.get("bbox_percent") or {}),
+                    "interactable_score": anchor.get("interactable_score"),
+                }
+            )
 
         return raw_visual_candidates
 
@@ -513,37 +550,39 @@ class Screen:
         latency_ms = int(round((time.perf_counter() - started_at) * 1000))
 
         normalized_blocks: list[dict[str, Any]] = []
-        for index, block in enumerate(text_blocks[:self.MAX_OCR_TEXT_BLOCKS], start=1):
-            bbox = block.get('bbox') or {}
-            x1 = int(bbox.get('x1') or 0)
-            y1 = int(bbox.get('y1') or 0)
-            x2 = int(bbox.get('x2') or 0)
-            y2 = int(bbox.get('y2') or 0)
+        for index, block in enumerate(text_blocks[: self.MAX_OCR_TEXT_BLOCKS], start=1):
+            bbox = block.get("bbox") or {}
+            x1 = int(bbox.get("x1") or 0)
+            y1 = int(bbox.get("y1") or 0)
+            x2 = int(bbox.get("x2") or 0)
+            y2 = int(bbox.get("y2") or 0)
             if x2 <= x1 or y2 <= y1:
                 continue
 
             center_x = int((x1 + x2) / 2)
             center_y = int((y1 + y2) / 2)
-            normalized_blocks.append({
-                'id': f'text_{index}',
-                'text': str(block.get('text') or '').strip(),
-                'confidence': round(float(block.get('confidence') or 0.0), 4),
-                'center_percent': {
-                    'x': round(center_x / max(1, screenshot.width), 4),
-                    'y': round(center_y / max(1, screenshot.height), 4),
-                },
-                'bbox_percent': {
-                    'x1': round(x1 / max(1, screenshot.width), 4),
-                    'y1': round(y1 / max(1, screenshot.height), 4),
-                    'x2': round(x2 / max(1, screenshot.width), 4),
-                    'y2': round(y2 / max(1, screenshot.height), 4),
-                },
-            })
+            normalized_blocks.append(
+                {
+                    "id": f"text_{index}",
+                    "text": str(block.get("text") or "").strip(),
+                    "confidence": round(float(block.get("confidence") or 0.0), 4),
+                    "center_percent": {
+                        "x": round(center_x / max(1, screenshot.width), 4),
+                        "y": round(center_y / max(1, screenshot.height), 4),
+                    },
+                    "bbox_percent": {
+                        "x1": round(x1 / max(1, screenshot.width), 4),
+                        "y1": round(y1 / max(1, screenshot.height), 4),
+                        "x2": round(x2 / max(1, screenshot.width), 4),
+                        "y2": round(y2 / max(1, screenshot.height), 4),
+                    },
+                }
+            )
 
         return {
-            'backend_used': backend.backend_name,
-            'latency_ms': latency_ms,
-            'text_blocks': normalized_blocks,
+            "backend_used": backend.backend_name,
+            "latency_ms": latency_ms,
+            "text_blocks": normalized_blocks,
         }
 
     def _build_semantic_regions(
@@ -559,67 +598,75 @@ class Screen:
             anchor_text = self._join_text_blocks(anchor_text_blocks)
             region_type = self._classify_anchor_region(anchor, anchor_text_blocks)
             semantic_role = self._classify_semantic_role(anchor, anchor_text)
-            semantic_confidence = self._estimate_semantic_confidence(anchor, anchor_text_blocks, region_type, semantic_role)
+            semantic_confidence = self._estimate_semantic_confidence(
+                anchor, anchor_text_blocks, region_type, semantic_role
+            )
 
             matched_text_block_ids: list[str] = []
             for block in anchor_text_blocks:
-                block_id = str(block.get('id') or '')
-                if block_id != '':
+                block_id = str(block.get("id") or "")
+                if block_id != "":
                     matched_text_ids.add(block_id)
                     matched_text_block_ids.append(block_id)
 
-            anchor['region_type'] = region_type
-            anchor['text'] = anchor_text
-            anchor['semantic_role'] = semantic_role
-            anchor['semantic_confidence'] = semantic_confidence
-            anchor['matched_text_block_ids'] = matched_text_block_ids
+            anchor["region_type"] = region_type
+            anchor["text"] = anchor_text
+            anchor["semantic_role"] = semantic_role
+            anchor["semantic_confidence"] = semantic_confidence
+            anchor["matched_text_block_ids"] = matched_text_block_ids
 
-            semantic_regions.append({
-                'id': f"sem_anchor_{anchor.get('id')}",
-                'source': 'fused' if len(anchor_text_blocks) > 0 else 'visual_only',
-                'region_type': region_type,
-                'semantic_role': semantic_role,
-                'confidence': semantic_confidence,
-                'backing_anchor_id': anchor.get('id'),
-                'text': anchor_text,
-                'text_block_ids': matched_text_block_ids,
-                'center_percent': {
-                    'x': anchor.get('x_percent'),
-                    'y': anchor.get('y_percent'),
-                },
-                'size_percent': {
-                    'width': anchor.get('width_percent'),
-                    'height': anchor.get('height_percent'),
-                },
-                'bbox_percent': dict(anchor.get('bbox_percent') or {}),
-                'interactable_score': anchor.get('interactable_score'),
-            })
+            semantic_regions.append(
+                {
+                    "id": f"sem_anchor_{anchor.get('id')}",
+                    "source": "fused" if len(anchor_text_blocks) > 0 else "visual_only",
+                    "region_type": region_type,
+                    "semantic_role": semantic_role,
+                    "confidence": semantic_confidence,
+                    "backing_anchor_id": anchor.get("id"),
+                    "text": anchor_text,
+                    "text_block_ids": matched_text_block_ids,
+                    "center_percent": {
+                        "x": anchor.get("x_percent"),
+                        "y": anchor.get("y_percent"),
+                    },
+                    "size_percent": {
+                        "width": anchor.get("width_percent"),
+                        "height": anchor.get("height_percent"),
+                    },
+                    "bbox_percent": dict(anchor.get("bbox_percent") or {}),
+                    "interactable_score": anchor.get("interactable_score"),
+                }
+            )
 
         for block in text_blocks:
-            block_id = str(block.get('id') or '')
+            block_id = str(block.get("id") or "")
             if block_id in matched_text_ids:
                 continue
 
-            text = str(block.get('text') or '').strip()
-            semantic_regions.append({
-                'id': f'sem_{block_id}',
-                'source': 'ocr_only',
-                'region_type': 'text',
-                'semantic_role': self._classify_text_block_role(block),
-                'confidence': round(float(block.get('confidence') or 0.0), 4),
-                'backing_anchor_id': None,
-                'text': text,
-                'text_block_ids': [block_id],
-                'center_percent': dict(block.get('center_percent') or {}),
-                'size_percent': self._build_size_percent_from_bbox(block.get('bbox_percent') or {}),
-                'bbox_percent': dict(block.get('bbox_percent') or {}),
-                'interactable_score': 0.0,
-            })
+            text = str(block.get("text") or "").strip()
+            semantic_regions.append(
+                {
+                    "id": f"sem_{block_id}",
+                    "source": "ocr_only",
+                    "region_type": "text",
+                    "semantic_role": self._classify_text_block_role(block),
+                    "confidence": round(float(block.get("confidence") or 0.0), 4),
+                    "backing_anchor_id": None,
+                    "text": text,
+                    "text_block_ids": [block_id],
+                    "center_percent": dict(block.get("center_percent") or {}),
+                    "size_percent": self._build_size_percent_from_bbox(
+                        block.get("bbox_percent") or {}
+                    ),
+                    "bbox_percent": dict(block.get("bbox_percent") or {}),
+                    "interactable_score": 0.0,
+                }
+            )
 
         semantic_regions.sort(
             key=lambda item: (
-                (item.get('bbox_percent') or {}).get('y1', 0.0),
-                (item.get('bbox_percent') or {}).get('x1', 0.0),
+                (item.get("bbox_percent") or {}).get("y1", 0.0),
+                (item.get("bbox_percent") or {}).get("x1", 0.0),
             )
         )
         return semantic_regions
@@ -630,25 +677,25 @@ class Screen:
         text_blocks: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         matches: list[dict[str, Any]] = []
-        anchor_box = anchor.get('bbox_percent') or {}
+        anchor_box = anchor.get("bbox_percent") or {}
 
         for block in text_blocks:
-            block_box = block.get('bbox_percent') or {}
+            block_box = block.get("bbox_percent") or {}
             overlap_ratio = self._compute_box_overlap_ratio(anchor_box, block_box)
             if overlap_ratio >= 0.2:
                 matches.append(block)
                 continue
 
-            block_center = block.get('center_percent') or {}
-            center_x = float(block_center.get('x') or 0.0)
-            center_y = float(block_center.get('y') or 0.0)
+            block_center = block.get("center_percent") or {}
+            center_x = float(block_center.get("x") or 0.0)
+            center_y = float(block_center.get("y") or 0.0)
             if self._point_in_box(center_x, center_y, anchor_box):
                 matches.append(block)
 
         matches.sort(
             key=lambda item: (
-                (item.get('bbox_percent') or {}).get('y1', 0.0),
-                (item.get('bbox_percent') or {}).get('x1', 0.0),
+                (item.get("bbox_percent") or {}).get("y1", 0.0),
+                (item.get("bbox_percent") or {}).get("x1", 0.0),
             )
         )
         return matches
@@ -658,8 +705,8 @@ class Screen:
         seen: set[str] = set()
 
         for block in text_blocks:
-            text = str(block.get('text') or '').strip()
-            if text == '':
+            text = str(block.get("text") or "").strip()
+            if text == "":
                 continue
             normalized = text.lower()
             if normalized in seen:
@@ -667,9 +714,9 @@ class Screen:
             seen.add(normalized)
             parts.append(text)
 
-        joined = ' '.join(parts).strip()
+        joined = " ".join(parts).strip()
         if len(joined) > 96:
-            return joined[:93] + '...'
+            return joined[:93] + "..."
         return joined
 
     def _classify_anchor_region(
@@ -677,59 +724,64 @@ class Screen:
         anchor: dict[str, Any],
         text_blocks: list[dict[str, Any]],
     ) -> str:
-        width_ratio = float(anchor.get('width_percent') or 0.0)
-        height_ratio = float(anchor.get('height_percent') or 0.0)
+        width_ratio = float(anchor.get("width_percent") or 0.0)
+        height_ratio = float(anchor.get("height_percent") or 0.0)
         if height_ratio <= 0.0:
-            return 'unknown'
+            return "unknown"
 
         aspect_ratio = width_ratio / max(0.0001, height_ratio)
         area_ratio = width_ratio * height_ratio
         text = self._join_text_blocks(text_blocks)
         text_length = len(text)
-        has_text = text != ''
-        bbox = anchor.get('bbox_percent') or {}
-        y1 = float(bbox.get('y1') or 0.0)
+        has_text = text != ""
+        bbox = anchor.get("bbox_percent") or {}
+        y1 = float(bbox.get("y1") or 0.0)
 
         if has_text and y1 <= 0.18 and width_ratio >= 0.18:
-            return 'text'
+            return "text"
 
         if aspect_ratio >= 5.0 and 0.02 <= height_ratio <= 0.14:
             if not has_text:
-                return 'input_like'
+                return "input_like"
             if text_length >= 10:
-                return 'input_like'
+                return "input_like"
 
-        if has_text and 1.2 <= aspect_ratio <= 6.5 and 0.02 <= height_ratio <= 0.12 and text_length <= 32:
-            return 'button_like'
+        if (
+            has_text
+            and 1.2 <= aspect_ratio <= 6.5
+            and 0.02 <= height_ratio <= 0.12
+            and text_length <= 32
+        ):
+            return "button_like"
 
         if has_text:
-            return 'text'
+            return "text"
 
         if 0.75 <= aspect_ratio <= 1.35 and area_ratio <= 0.025:
-            return 'icon'
+            return "icon"
 
         if aspect_ratio >= 3.8 and 0.02 <= height_ratio <= 0.12:
-            return 'input_like'
+            return "input_like"
 
-        return 'unknown'
+        return "unknown"
 
     def _classify_semantic_role(self, anchor: dict[str, Any], text: str) -> str | None:
-        if text == '':
+        if text == "":
             return None
 
-        bbox = anchor.get('bbox_percent') or {}
-        width_ratio = float(anchor.get('width_percent') or 0.0)
-        y1 = float(bbox.get('y1') or 0.0)
+        bbox = anchor.get("bbox_percent") or {}
+        width_ratio = float(anchor.get("width_percent") or 0.0)
+        y1 = float(bbox.get("y1") or 0.0)
         if y1 <= 0.18 and width_ratio >= 0.18:
-            return 'window_title'
+            return "window_title"
         return None
 
     def _classify_text_block_role(self, text_block: dict[str, Any]) -> str | None:
-        bbox = text_block.get('bbox_percent') or {}
-        width_ratio = float(bbox.get('x2', 0.0)) - float(bbox.get('x1', 0.0))
-        y1 = float(bbox.get('y1') or 0.0)
+        bbox = text_block.get("bbox_percent") or {}
+        width_ratio = float(bbox.get("x2", 0.0)) - float(bbox.get("x1", 0.0))
+        y1 = float(bbox.get("y1") or 0.0)
         if y1 <= 0.18 and width_ratio >= 0.18:
-            return 'window_title'
+            return "window_title"
         return None
 
     def _estimate_semantic_confidence(
@@ -739,70 +791,80 @@ class Screen:
         region_type: str,
         semantic_role: str | None,
     ) -> float:
-        interactable_score = float(anchor.get('interactable_score') or 0.0)
+        interactable_score = float(anchor.get("interactable_score") or 0.0)
         text_confidence = 0.0
         if len(text_blocks) > 0:
             total_confidence = 0.0
             for block in text_blocks:
-                total_confidence += float(block.get('confidence') or 0.0)
+                total_confidence += float(block.get("confidence") or 0.0)
             text_confidence = total_confidence / float(len(text_blocks))
 
         confidence = 0.35
-        if region_type == 'text':
+        if region_type == "text":
             confidence = max(confidence, text_confidence)
-        elif region_type in {'button_like', 'input_like', 'icon'}:
-            confidence = max(confidence, interactable_score * 0.65 + text_confidence * 0.35)
+        elif region_type in {"button_like", "input_like", "icon"}:
+            confidence = max(
+                confidence, interactable_score * 0.65 + text_confidence * 0.35
+            )
         else:
             confidence = max(confidence, interactable_score * 0.75)
 
-        if semantic_role == 'window_title':
+        if semantic_role == "window_title":
             confidence = max(confidence, 0.75)
 
         return round(min(1.0, confidence), 4)
 
     def _build_size_percent_from_bbox(self, bbox: dict[str, Any]) -> dict[str, float]:
-        x1 = float(bbox.get('x1') or 0.0)
-        y1 = float(bbox.get('y1') or 0.0)
-        x2 = float(bbox.get('x2') or 0.0)
-        y2 = float(bbox.get('y2') or 0.0)
+        x1 = float(bbox.get("x1") or 0.0)
+        y1 = float(bbox.get("y1") or 0.0)
+        x2 = float(bbox.get("x2") or 0.0)
+        y2 = float(bbox.get("y2") or 0.0)
         return {
-            'width': round(max(0.0, x2 - x1), 4),
-            'height': round(max(0.0, y2 - y1), 4),
+            "width": round(max(0.0, x2 - x1), 4),
+            "height": round(max(0.0, y2 - y1), 4),
         }
 
     def _build_screen_state(self, grid_reference: dict[str, Any]) -> dict[str, Any]:
         return {
-            'prompt_mode': 'pure_grid',
-            'coordinate_system': 'percent',
-            'major_tick_percent': grid_reference.get('major_tick_percent'),
-            'minor_tick_percent': grid_reference.get('minor_tick_percent'),
-            'axes': list(grid_reference.get('axes') or []),
+            "prompt_mode": "pure_grid",
+            "coordinate_system": "percent",
+            "major_tick_percent": grid_reference.get("major_tick_percent"),
+            "minor_tick_percent": grid_reference.get("minor_tick_percent"),
+            "axes": list(grid_reference.get("axes") or []),
         }
 
-    def _annotate_image(self, image: Image.Image, anchors: list[dict[str, Any]]) -> Image.Image:
+    def _annotate_image(
+        self, image: Image.Image, anchors: list[dict[str, Any]]
+    ) -> Image.Image:
         draw = ImageDraw.Draw(image)
 
         for anchor in anchors:
-            bbox = anchor['bbox_percent']
-            x1 = int(bbox['x1'] * image.width)
-            y1 = int(bbox['y1'] * image.height)
-            x2 = int(bbox['x2'] * image.width)
-            y2 = int(bbox['y2'] * image.height)
+            bbox = anchor["bbox_percent"]
+            x1 = int(bbox["x1"] * image.width)
+            y1 = int(bbox["y1"] * image.height)
+            x2 = int(bbox["x2"] * image.width)
+            y2 = int(bbox["y2"] * image.height)
 
-            draw.rectangle((x1, y1, x2, y2), outline='red', width=3)
+            draw.rectangle((x1, y1, x2, y2), outline="red", width=3)
 
             label = f"[{anchor['id']}]"
             label_x = x1 + 4
             label_y = max(0, y1 - 20)
-            draw.rectangle((label_x - 2, label_y - 2, label_x + (len(label) * 8), label_y + 14), fill='red')
-            draw.text((label_x, label_y), label, fill='white')
+            draw.rectangle(
+                (label_x - 2, label_y - 2, label_x + (len(label) * 8), label_y + 14),
+                fill="red",
+            )
+            draw.text((label_x, label_y), label, fill="white")
 
         return image
 
     def _prepare_prompt_image(self, image: Image.Image) -> Image.Image:
         width = image.width
         height = image.height
-        if width <= self.MAX_PROMPT_IMAGE_WIDTH and height <= self.MAX_PROMPT_IMAGE_HEIGHT:
+        if (
+            width <= self.MAX_PROMPT_IMAGE_WIDTH
+            and height <= self.MAX_PROMPT_IMAGE_HEIGHT
+        ):
             return image
 
         width_scale = self.MAX_PROMPT_IMAGE_WIDTH / float(max(1, width))
@@ -817,14 +879,14 @@ class Screen:
         box_a: dict[str, Any],
         box_b: dict[str, Any],
     ) -> float:
-        ax1 = float(box_a.get('x1') or 0.0)
-        ay1 = float(box_a.get('y1') or 0.0)
-        ax2 = float(box_a.get('x2') or 0.0)
-        ay2 = float(box_a.get('y2') or 0.0)
-        bx1 = float(box_b.get('x1') or 0.0)
-        by1 = float(box_b.get('y1') or 0.0)
-        bx2 = float(box_b.get('x2') or 0.0)
-        by2 = float(box_b.get('y2') or 0.0)
+        ax1 = float(box_a.get("x1") or 0.0)
+        ay1 = float(box_a.get("y1") or 0.0)
+        ax2 = float(box_a.get("x2") or 0.0)
+        ay2 = float(box_a.get("y2") or 0.0)
+        bx1 = float(box_b.get("x1") or 0.0)
+        by1 = float(box_b.get("y1") or 0.0)
+        bx2 = float(box_b.get("x2") or 0.0)
+        by2 = float(box_b.get("y2") or 0.0)
 
         inter_x1 = max(ax1, bx1)
         inter_y1 = max(ay1, by1)
@@ -838,14 +900,18 @@ class Screen:
         area_b = max(0.000001, (bx2 - bx1) * (by2 - by1))
         return inter_area / float(min(area_a, area_b))
 
-    def _point_in_box(self, x_value: float, y_value: float, box: dict[str, Any]) -> bool:
-        x1 = float(box.get('x1') or 0.0)
-        y1 = float(box.get('y1') or 0.0)
-        x2 = float(box.get('x2') or 0.0)
-        y2 = float(box.get('y2') or 0.0)
+    def _point_in_box(
+        self, x_value: float, y_value: float, box: dict[str, Any]
+    ) -> bool:
+        x1 = float(box.get("x1") or 0.0)
+        y1 = float(box.get("y1") or 0.0)
+        x2 = float(box.get("x2") or 0.0)
+        y2 = float(box.get("y2") or 0.0)
         return x1 <= x_value <= x2 and y1 <= y_value <= y2
 
-    def _boxes_overlap(self, box_a: tuple[int, int, int, int], box_b: tuple[int, int, int, int]) -> bool:
+    def _boxes_overlap(
+        self, box_a: tuple[int, int, int, int], box_b: tuple[int, int, int, int]
+    ) -> bool:
         ax1, ay1, ax2, ay2 = box_a
         bx1, by1, bx2, by2 = box_b
 
@@ -916,6 +982,8 @@ class Screen:
 
         size_score = 1.0 - min(1.0, abs(area_ratio - 0.0025) / 0.01)
         aspect_score = 1.0 - min(1.0, abs(width_ratio - height_ratio) * 4.0)
-        source_bonus = 0.15 if source == 'detected' else 0.0
-        final_score = max(0.0, min(1.0, size_score * 0.65 + aspect_score * 0.20 + 0.15 + source_bonus))
+        source_bonus = 0.15 if source == "detected" else 0.0
+        final_score = max(
+            0.0, min(1.0, size_score * 0.65 + aspect_score * 0.20 + 0.15 + source_bonus)
+        )
         return round(final_score, 4)
